@@ -1,0 +1,9 @@
+datasets
+matplotlib
+pandas
+pillow
+requests
+torch
+tqdm
+transformers
+seaborn
