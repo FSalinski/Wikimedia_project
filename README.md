@@ -24,5 +24,11 @@ Manual labeling app (gold set):
 python scripts/label_app.py --input_dir pool --output_csv labels_gold.csv --limit 500
 ```
 
+Split the gold set into train/val/test inside the pool:
+
+```bash
+python scripts/split_gold.py --input_csv labels_gold.csv --out_dir pool/splits --test_size 200 --val_size 160 --copy_images
+```
+
 ## Notebook
 - [notebooks/main.ipynb](notebooks/main.ipynb)
