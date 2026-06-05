@@ -209,6 +209,7 @@ __marimo__/
 # Test and training pictures
 test_set/
 train_set/
+val_set/
 pool/
 
 # VS Code settings

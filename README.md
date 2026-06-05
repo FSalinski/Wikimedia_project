@@ -30,5 +30,11 @@ Split the gold set into train/val/test inside the pool:
 python scripts/split_gold.py --input_csv labels_gold.csv --out_dir pool/splits --test_size 200 --val_size 160 --copy_images
 ```
 
+Pseudo-label the remaining pool and create train/val sets:
+
+```bash
+python scripts/pseudo_label_pool.py --pool_dir pool --splits_dir pool/splits --train_dir train_set --val_dir val_set
+```
+
 ## Notebook
 - [notebooks/main.ipynb](notebooks/main.ipynb)
