@@ -1,0 +1,11 @@
+{
+  "best_val_accuracy": 0.86875,
+  "classes": [
+    "inside",
+    "outside"
+  ],
+  "train_dir": "train_set",
+  "val_dir": "val_set",
+  "gold_splits_dir": "pool/splits",
+  "used_gold": true
+}
