@@ -18,5 +18,11 @@ Create the candidate pool:
 python scripts/create_candidate_pool.py --output_dir pool --target_total 20000
 ```
 
+Manual labeling app (gold set):
+
+```bash
+python scripts/label_app.py --input_dir pool --output_csv labels_gold.csv --limit 500
+```
+
 ## Notebook
 - [notebooks/main.ipynb](notebooks/main.ipynb)
