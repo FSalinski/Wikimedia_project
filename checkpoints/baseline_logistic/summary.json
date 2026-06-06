@@ -1,5 +1,5 @@
 {
-  "best_val_accuracy": 0.86875,
+  "best_val_accuracy": 0.8866666666666667,
   "classes": [
     "inside",
     "outside"
