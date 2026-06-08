@@ -1,0 +1,12 @@
+{
+  "checkpoint": "checkpoints\\final_logistic\\best.pt",
+  "metrics_csv": "checkpoints\\final_logistic\\metrics.csv",
+  "pool_dir": "C:\\Users\\Franek\\STUDIA\\Projekty\\Wikimedia_project\\pool",
+  "gold_splits_dir": "C:\\Users\\Franek\\STUDIA\\Projekty\\Wikimedia_project\\pool\\splits",
+  "seed": 42,
+  "train_size": 21367,
+  "pool_size_used": 20008,
+  "gold_train_size": 1059,
+  "gold_val_size": 300,
+  "gold_test_size_held_out": 300
+}

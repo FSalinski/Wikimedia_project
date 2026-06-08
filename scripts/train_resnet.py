@@ -2,13 +2,14 @@ import argparse
 import csv
 import json
 import os
+import random
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import ConcatDataset, DataLoader, Dataset
 from PIL import Image
-from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
@@ -31,8 +32,28 @@ def parse_args() -> argparse.Namespace:
 
 
 def set_seed(seed: int) -> None:
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+
+    random.seed(seed)
+    np.random.seed(seed)
     torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    try:
+        torch.use_deterministic_algorithms(True)
+    except Exception:
+        pass
+
+
+def seed_worker(worker_id: int) -> None:
+    worker_seed = torch.initial_seed() % 2**32
+    random.seed(worker_seed)
+    np.random.seed(worker_seed)
 
 
 def get_device() -> torch.device:
@@ -130,6 +151,10 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device, label: 
 def main() -> None:
     args = parse_args()
     set_seed(args.seed)
+
+    generator = torch.Generator()
+    generator.manual_seed(args.seed)
+
     device = get_device()
     print(f"Using device: {device}")
 
@@ -151,6 +176,8 @@ def main() -> None:
         shuffle=True,
         num_workers=args.num_workers,
         pin_memory=torch.cuda.is_available(),
+        worker_init_fn=seed_worker,
+        generator=generator,
     )
     val_loader = DataLoader(
         val_dataset,
@@ -158,6 +185,8 @@ def main() -> None:
         shuffle=False,
         num_workers=args.num_workers,
         pin_memory=torch.cuda.is_available(),
+        worker_init_fn=seed_worker,
+        generator=generator,
     )
     gold_val_loader = None
     if args.use_gold and len(gold_val) > 0:
@@ -167,6 +196,8 @@ def main() -> None:
             shuffle=False,
             num_workers=args.num_workers,
             pin_memory=torch.cuda.is_available(),
+            worker_init_fn=seed_worker,
+            generator=generator,
         )
 
     model = build_model(num_classes=len(train_base.classes))
@@ -183,6 +214,8 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = output_dir / "metrics.csv"
+    metrics_rows: list[dict[str, str | int | float]] = []
 
     best_acc = 0.0
     for epoch in range(1, args.epochs + 1):
@@ -222,6 +255,18 @@ def main() -> None:
         print(message)
 
         metric_source = gold_metrics["accuracy"] if gold_metrics is not None else val_metrics["accuracy"]
+        metrics_rows.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "val_loss": val_metrics["loss"],
+                "val_accuracy": val_metrics["accuracy"],
+                "gold_val_loss": gold_metrics["loss"] if gold_metrics is not None else "",
+                "gold_val_accuracy": gold_metrics["accuracy"] if gold_metrics is not None else "",
+                "selection_source": "gold" if gold_metrics is not None else "pseudo",
+                "selection_accuracy": metric_source,
+            }
+        )
         if metric_source > best_acc:
             best_acc = metric_source
             ckpt_path = output_dir / "best.pt"
@@ -235,6 +280,23 @@ def main() -> None:
                 ckpt_path,
             )
 
+    with metrics_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "epoch",
+                "train_loss",
+                "val_loss",
+                "val_accuracy",
+                "gold_val_loss",
+                "gold_val_accuracy",
+                "selection_source",
+                "selection_accuracy",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(metrics_rows)
+
     summary = {
         "best_val_accuracy": best_acc,
         "classes": train_base.classes,
@@ -242,6 +304,7 @@ def main() -> None:
         "val_dir": args.val_dir,
         "gold_splits_dir": args.gold_splits_dir,
         "used_gold": args.use_gold,
+        "metrics_csv": str(metrics_path),
     }
     with (output_dir / "summary.json").open("w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)

@@ -1,5 +1,5 @@
 {
-  "best_val_accuracy": 0.8866666666666667,
+  "best_val_accuracy": 0.89,
   "classes": [
     "inside",
     "outside"
@@ -7,5 +7,6 @@
   "train_dir": "train_set",
   "val_dir": "val_set",
   "gold_splits_dir": "pool/splits",
-  "used_gold": true
+  "used_gold": true,
+  "metrics_csv": "checkpoints\\baseline_logistic\\metrics.csv"
 }
